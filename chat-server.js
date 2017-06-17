@@ -76,17 +76,23 @@ wsServer.on('request', function(request) {
     console.log((new Date()) + ' Connection accepted.');
 
     var i=0;
+    var yourName = Math.floor(Math.random() * 1000) + 1;
+    var oponentName = Math.floor(Math.random() * 1000) + 1;
 
     for (var i=0; i < clients.length; i++) {
         if ((clients[i].channel == null) && ( i != index)) {
           var obj1 = {
               whoStarts: '1',
-              symbol: '1'
+              symbol: '1',
+              yourName: yourName,
+              oponentName: oponentName
           };
 
           var obj2 = {
             whoStarts: '0',
-            symbol: '0'
+            symbol: '0',
+            yourName: oponentName,
+            oponentName:  yourName
           };
 
             var json1 = JSON.stringify({ type:'start', data: obj1 });
@@ -103,11 +109,32 @@ wsServer.on('request', function(request) {
         }
     }
 
-//TODO tablica ze stanem
 
     // user sent some message
     connection.on('message', function(message) {
-      console.log('dostalem wiadomosc');
+      var json = JSON.parse(message.utf8Data);
+
+      if (json.type === 'move') {
+        console.log('Made a move');
+        var tupleChannelID = clients[index].channel;
+        for (var i=0; i < clients.length; i++) {
+            if ((clients[i].channel === tupleChannelID) && ( i != index)) {
+              console.log('wysylam do ziomeczka');
+              var json1 = JSON.stringify({ type:'move', data: json.data });
+              clients[i].connection.sendUTF(json1);
+            }
+          }
+      }
+      else if (json.type === 'winner') {
+        for (var i=0; i < clients.length; i++) {
+            if ((clients[i].channel === tupleChannelID) && ( i != index)) {
+              console.log('wysylam do ziomeczka');
+              var json1 = JSON.stringify({ type:'winner', data: json.data });
+              clients[i].connection.sendUTF(json1);
+            }
+          }
+      }
+
       //   if (message.type === 'utf8') { // accept only text
       //
       //           console.log((new Date()) + ' Received Message from '

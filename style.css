@@ -4,8 +4,10 @@
 }
 
 .canvas-wrapper {
-  position: absolute;
-  top: 50%;
+  /*position: absolute;*/
+  position: fixed;
+  top: 200px;
+  left: 200px;
   transform: translateY(-50%);
   width: 100%;
 }
@@ -15,5 +17,9 @@
 }
 
 #tic-tac-toe-containers {
+  visibility: hidden;
+}
+
+#names {
   visibility: hidden;
 }

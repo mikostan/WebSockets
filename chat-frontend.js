@@ -5,6 +5,7 @@ $(function () {
     var content = $('#content');
     var input = $('#input');
     var status = $('#status');
+    var player = null;
 
     // my color assigned by the server
     var myColor = false;
@@ -52,36 +53,85 @@ $(function () {
 
         // NOTE: if you're not sure about the JSON structure
         // check the server source code above
+        var container = document.getElementById('tic-tac-toe-board');
+        var nameDiv = document.getElementById('names');
+        var yourName = document.getElementById('your-name');
+        var oponentName = document.getElementById('oponent-name');
+
+        var startMessage = json.data;
         if (json.type === 'start') { // first response from the server with user's color
-          var startMessage = json.data;
-          var container = document.getElementById('tic-tac-toe-board');
           container.style.visibility = 'visible';
-          debugger
+          nameDiv.style.visibility = 'visible';
+          player = startMessage.symbol;
+          yourName.textContent = startMessage.yourName;
+          oponentName.textContent = startMessage.oponentName;
           if (startMessage.whoStarts === '0') {
-            debugger
             container.style.pointerEvents = 'none';
             container.style.opacity = '0.5';}
-        } else if (json.type === 'history') { // entire message history
+        } else if (json.type === 'move') { // entire message history
+          debugger
+          container.style.pointerEvents = 'auto';
+          container.style.opacity = '1';
+          var canvasMousePosition = getCanvasMousePosition(startMessage.clientX, startMessage.clientY);
 
+          if(player === '0') {addPlayingPiece(canvasMousePosition, '1');}
+          else {addPlayingPiece(canvasMousePosition, '0');}
+          drawLines(10, lineColor);
             }
+          else if (json.type === 'winner') {
+            var container = document.getElementById('tic-tac-toe-board');
+            container.style.pointerEvents = 'none';
+            container.style.opacity = '0.5';
+            if (symbol === player) {
+                alert('You won!');
+            }else{
+              alert('You lose!');
+            }
+          }
     };
 
-    canvas.onclick = function (event) {
-      if (player === 1) {
-        player = 2;
-      } else {
-        player = 1;
+    function detectWinner (board) {
+      var symbol = null;
+      for(var x=0;x<2;x++) {
+        if ((board[x][0] != '') && board[x][0]==board[x][1]==board[x][2]) symbol=board[x][0];
+        else if ((board[0][x] != '') && board[0][x]==board[1][x]==board[2][x]) symbol=board[0][x];
       }
-      var obj = {
-          clientX: event.clientX,
-          clientY: event.clientY
-      };
-      var json = JSON.stringify({ type:'message', data: obj });
+      if((board[0][0] != '') && board[0][0]==board[1][1]==board[2][2] || board[0][2]==board[1][1]==board[2][0]) symbol = board[1][1];
 
-      connection.send(json);
+      return symbol;
+    }
+
+    canvas.onclick = function (event) {
       var canvasMousePosition = getCanvasMousePosition(event.clientX, event.clientY);
-      addPlayingPiece(canvasMousePosition);
+      addPlayingPiece(canvasMousePosition, player);
       drawLines(10, lineColor);
+      var container = document.getElementById('tic-tac-toe-board');
+      container.style.pointerEvents = 'none';
+      container.style.opacity = '0.5';
+      debugger
+      if((detectWinner(board)!='') && (detectWinner(board) != null)) {
+        var symbol = detectWinner(board);
+        var obj = {
+            symbol: symbol
+        };
+        var json = JSON.stringify({ type:'winner', data: obj });
+        connection.send(json);
+        var container = document.getElementById('tic-tac-toe-board');
+        container.style.pointerEvents = 'none';
+        container.style.opacity = '0.5';
+        if (symbol === player) {
+            alert('You won!');
+        }else{
+          alert('You lose!');
+        }
+      } else {
+      var obj = {
+          clientX: event.clientX.toString(),
+          clientY: event.clientY.toString()
+      };
+      var json = JSON.stringify({ type:'move', data: obj });
+      connection.send(json);
+    }
     };
 
 
